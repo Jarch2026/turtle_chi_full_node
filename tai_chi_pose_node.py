@@ -75,7 +75,7 @@ def load_mlp_model(model_path, scaler_path, input_dim=43, hidden_dims=(64, 32)):
 
 
 def normalize_keypoints(kpts):
-    kpts = np.array(kpts)[:, :2]  # Only use (y, x) and drop confidence. matches training!
+    kpts = np.array(kpts)[:, :2]  # Only use (y, x) and drop confidence - matches training!
     
     # Key points
     ls = kpts[5]  # left shoulder
@@ -138,7 +138,7 @@ def extract_features(kpts):
     
     # Combine all features
     features = np.concatenate([
-        k.flatten(), 
+        k.flatten(),  # 17*2 = 34 features (normalized y, x coords - matches training!)
         [
             left_elbow_angle,
             right_elbow_angle,
@@ -184,9 +184,10 @@ class MultiModelTaiChiPoseNode(Node):
         self.load_movenet()
         self.get_logger().info(f"MoveNet loaded (input size: {self.input_size})")
         
-        # Load all 4 models at startup
+        # Load all models at startup  
         self.models = {}
-        self.get_logger().info("\nLoading all 4 movement models...")
+        self.get_logger().info("\nLoading movement models...")
+         
         for i in range(1, 5):
             model_path = os.path.join(self.models_dir, f'movement_{i}_mlp_scratch_ver3.npz')
             scaler_path = os.path.join(self.models_dir, f'movement_{i}_scaler_scratch_ver3.npz')
@@ -199,9 +200,25 @@ class MultiModelTaiChiPoseNode(Node):
                     'std': std,
                     'path': model_path
                 }
-                self.get_logger().info(f"Movement {i} model loaded: {os.path.basename(model_path)}")
+                self.get_logger().info(f"  Movement {i} model loaded: {os.path.basename(model_path)}")
             else:
-                self.get_logger().warn(f" Movement {i} model not found!")
+                self.get_logger().warn(f"  Movement {i} model not found!")
+        
+        # Load model 5  
+        model_5_path = os.path.join(self.models_dir, 'movement_5_low_mlp_scratch_ver3.npz')
+        scaler_5_path = os.path.join(self.models_dir, 'movement_5_low_scaler_scratch_ver3.npz')
+        
+        if os.path.exists(model_5_path) and os.path.exists(scaler_5_path):
+            model, mean, std = load_mlp_model(model_5_path, scaler_5_path, input_dim=43, hidden_dims=(64, 32))
+            self.models[5] = {
+                'model': model,
+                'mean': mean,
+                'std': std,
+                'path': model_5_path
+            }
+            self.get_logger().info(f"  Model 5 (low/incorrect) loaded: {os.path.basename(model_5_path)}")
+        else:
+            self.get_logger().warn(f"  Model 5 (low/incorrect) not found - secondary evaluation disabled")
         
         self.current_movement = 1
         self.get_logger().info(f"\n Currently evaluating: Movement {self.current_movement}")
@@ -261,9 +278,9 @@ class MultiModelTaiChiPoseNode(Node):
         movement_num = msg.data
         if movement_num in self.models:
             self.current_movement = movement_num
-            self.get_logger().info(f"Switched to Movement {movement_num} model")
+            self.get_logger().info(f" Switched to Movement {movement_num} model")
         else:
-            self.get_logger().warn(f"Movement {movement_num} model not loaded!")
+            self.get_logger().warn(f"  Movement {movement_num} model not loaded!")
     
     def image_callback(self, msg):
         try:
@@ -279,7 +296,7 @@ class MultiModelTaiChiPoseNode(Node):
         if not msg.data:
             return
         
-        self.get_logger().info(f"TRIGGER - Evaluating Movement {self.current_movement}...")
+        self.get_logger().info(f" TRIGGER - Evaluating Movement {self.current_movement}...")
         
         if not self.capture_ready or self.latest_image is None:
             self.get_logger().warn("No image available yet!")
@@ -316,6 +333,7 @@ class MultiModelTaiChiPoseNode(Node):
                 return
              
             kpts = keypoints_with_scores[0, 0]
+ 
             features = extract_features(kpts)
 
             # Get current model
@@ -337,10 +355,10 @@ class MultiModelTaiChiPoseNode(Node):
             result_msg = String()
             if prediction == 1:
                 result_msg.data = "correct"
-                self.get_logger().info(f"✓ Movement {self.current_movement} CORRECT (confidence: {prob:.3f})")
+                self.get_logger().info(f" Movement {self.current_movement} CORRECT (confidence: {prob:.3f})")
             else:
                 result_msg.data = "incorrect"
-                self.get_logger().info(f"✗ Movement {self.current_movement} INCORRECT (confidence: {1-prob:.3f})")
+                self.get_logger().info(f" Movement {self.current_movement} INCORRECT (confidence: {1-prob:.3f})")
 
             self.result_pub.publish(result_msg)
             self.get_logger().info(f"  Keypoint avg confidence: {avg_conf:.3f}")
