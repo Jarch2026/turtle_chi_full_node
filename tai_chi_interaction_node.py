@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String, Bool, Int32
+from std_msgs.msg import String, Bool, Int32, Float64
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
+from geometry_msgs.msg import Twist
 import time
 import os
 import subprocess
+import numpy as np
+
 
 class ThreeMovementTaiChiNode(Node):
     def __init__(self):
@@ -16,26 +19,32 @@ class ThreeMovementTaiChiNode(Node):
         self.declare_parameter('result_topic', '/pose_result')
         self.declare_parameter('model_select_topic', '/select_movement')
         self.declare_parameter('arm_topic', '/arm_controller/joint_trajectory')
+        self.declare_parameter('gripper_topic', '/gripper_controller/gripper_cmd')
+        self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('audio_dir', '/home/poojavegesna/intro_robo_ws/src/turtle_chi/turtle_chi/')
         self.declare_parameter('use_audio', True)
-        self.declare_parameter('step_duration', 0.8)
+        self.declare_parameter('step_duration', 1.8)
         
         self.trigger_topic = self.get_parameter('trigger_topic').value
         self.result_topic = self.get_parameter('result_topic').value
         self.model_select_topic = self.get_parameter('model_select_topic').value
         self.arm_topic = self.get_parameter('arm_topic').value
+        self.gripper_topic = self.get_parameter('gripper_topic').value
+        self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').value
         self.audio_dir = self.get_parameter('audio_dir').value
         self.use_audio = self.get_parameter('use_audio').value
         self.step_duration = self.get_parameter('step_duration').value
         
         self.get_logger().info("="*60)
-        self.get_logger().info("Three-Movement Tai Chi Interaction Node")
+        self.get_logger().info("Enhanced Three-Movement Tai Chi Node")
         self.get_logger().info("="*60)
         
         # Publishers
         self.trigger_pub = self.create_publisher(Bool, self.trigger_topic, 10)
         self.arm_pub = self.create_publisher(JointTrajectory, self.arm_topic, 10)
         self.model_select_pub = self.create_publisher(Int32, self.model_select_topic, 10)
+        self.gripper_pub = self.create_publisher(Float64, self.gripper_topic, 10)
+        self.cmd_vel_pub = self.create_publisher(Twist, self.cmd_vel_topic, 10)
         
         # Subscriber
         self.result_sub = self.create_subscription(
@@ -48,7 +57,7 @@ class ThreeMovementTaiChiNode(Node):
         self.latest_result = None
         self.waiting_for_result = False
 
-        # Movement 1: Flow Sequence (11 poses)
+        # Movement 1 
         self.movement_1_poses = [
             [0.0, -0.023, 0.003, 0.0],
             [0.0, 1.499, 0.209, 0.0],
@@ -62,27 +71,10 @@ class ThreeMovementTaiChiNode(Node):
             [0.0, -0.402, -1.197, 0.599],
             [0.0, -0.402, -1.197, 0.0],
         ]
-
-        # Movement 2: Rotation Return (5 poses)
-        self.movement_2_poses = [
-            [-0.008, -1.005, 0.715, 0.302],
-            [1.571, -1.950, -2.0, 0.0],
-            [1.571, 0.0, -2.0, 0.0],
-            [1.571, -1.300, 1.150, -1.4],
-        ]
-
-        # Movement 3: Extended Cycle (9 poses)
-        self.movement_3_poses = [
-            [-0.008, -1.005, 0.715, 0.302],
-            [1.571, 1.950, -2.0, 0.0],
-            [1.571, 0.0, -2.0, 0.0],
-            [1.571, -1.300, 1.050, 0.0],
-            [1.57, 1.249, -0.451, -0.499],
-            [1.571, 0.0, -2.0, 0.0],
-            [1.571, -1.300, 1.050, 0.0],
-            [1.57, 1.249, -0.451, -0.499],
-            [-0.008, -1.005, 0.715, 0.302],
-        ]
+ 
+        self.movement_2_poses = self._create_smooth_movement_2()
+ 
+        self.movement_3_poses = self._create_smooth_movement_3()
 
         self.movements = {
             1: {
@@ -102,12 +94,14 @@ class ThreeMovementTaiChiNode(Node):
             }
         }
 
-        # General audio files
+        # Audio files
         self.audio_files = {
+            "welcome": "intro.wav",
             "intro": "intro.wav",
             "good_job": "good job ur pose worked.wav",
             "stay_for_evaluate": "stay_for_evaluate.wav",
             "try_again": "Jacks_Mom.wav",
+            "low_quality": "Jacks_Mom.wav", 
         }
 
         self.neutral_pose = [0.0, -0.023, 0.003, 0.0]
@@ -116,9 +110,61 @@ class ThreeMovementTaiChiNode(Node):
         self.get_logger().info("Ready! 3 Movements Loaded:")
         self.get_logger().info(f"  Movement 1: {len(self.movement_1_poses)} poses")
         self.get_logger().info(f"  Movement 2: {len(self.movement_2_poses)} poses")
-        self.get_logger().info(f"  Movement 3: {len(self.movement_3_poses)} poses")
+        self.get_logger().info(f"  Movement 3: {len(self.movement_3_poses)} poses )")
         self.get_logger().info(f"  Step duration: {self.step_duration}s")
         self.get_logger().info("="*60)
+    
+    def _interpolate_poses(self, start_pose, end_pose, num_steps=3): 
+        interpolated = []
+        for i in range(1, num_steps + 1):
+            alpha = i / (num_steps + 1)
+            interp_pose = [
+                start_pose[j] + alpha * (end_pose[j] - start_pose[j])
+                for j in range(4)
+            ]
+            interpolated.append(interp_pose)
+        return interpolated
+    
+    def _create_smooth_movement_2(self): 
+        key_poses = [
+            [-0.008, -1.005, 0.715, 0.302],   # Start
+            [1.571, -1.950, -2.0, 0.0],        # Large rotation
+            [1.571, 0.0, -2.0, 0.0],           # Arms extended
+            [1.571, -1.300, 1.150, -1.4],      # Complex position
+        ]
+        
+        smooth_poses = []
+        for i in range(len(key_poses)):
+            smooth_poses.append(key_poses[i])
+            if i < len(key_poses) - 1:
+                # Add 2 interpolation poses between each key pose
+                interpolated = self._interpolate_poses(key_poses[i], key_poses[i+1], num_steps=2)
+                smooth_poses.extend(interpolated)
+        
+        return smooth_poses
+    
+    def _create_smooth_movement_3(self): 
+        key_poses = [
+            [-0.008, -1.005, 0.715, 0.302],    # Start
+            [1.571, 1.950, -2.0, 0.0],          # Opposite rotation
+            [1.571, 0.0, -2.0, 0.0],            # Extended
+            [1.571, -1.300, 1.050, 0.0],        # Transition
+            [1.57, 1.249, -0.451, -0.499],      # Complex pose
+            [1.571, 0.0, -2.0, 0.0],            # Extended again
+            [1.571, -1.300, 1.050, 0.0],        # Repeat transition
+            [1.57, 1.249, -0.451, -0.499],      # Repeat complex
+            [-0.008, -1.005, 0.715, 0.302],    # End
+        ]
+        
+        smooth_poses = []
+        for i in range(len(key_poses)):
+            smooth_poses.append(key_poses[i])
+            if i < len(key_poses) - 1:
+                # Add 1 interpolation pose between each ? maybe 2? 
+                interpolated = self._interpolate_poses(key_poses[i], key_poses[i+1], num_steps=3)
+                smooth_poses.extend(interpolated)
+        
+        return smooth_poses
     
     def play_audio(self, filename, blocking=True):
         if not self.use_audio:
@@ -162,6 +208,48 @@ class ThreeMovementTaiChiNode(Node):
         msg.points = [point]
         self.arm_pub.publish(msg)
     
+    def move_gripper(self, position): 
+        msg = Float64()
+        msg.data = float(position)
+        self.gripper_pub.publish(msg)
+    
+    def talking_animation(self, duration=5.0): 
+        self.get_logger().info("  Robot talking...")
+        start_time = time.time()
+        
+        while (time.time() - start_time) < duration:
+            self.move_gripper(1.0)  # Open
+            time.sleep(0.3)
+            self.move_gripper(0.0)  # Close
+            time.sleep(0.3)
+        
+        self.move_gripper(0.0)  # End closed
+    
+    def celebration_spin(self): 
+        self.get_logger().info("  Celebration spin!")
+        
+        # Calculate spin parameters
+        angular_velocity = 0.5  # rad/s
+        spin_duration = (2 * 3.14159) / angular_velocity  
+        # Start spinning
+        twist = Twist()
+        twist.angular.z = angular_velocity
+        
+        start_time = time.time()
+        while (time.time() - start_time) < spin_duration:
+            self.cmd_vel_pub.publish(twist)
+            
+            # Open/close gripper while spinning
+            self.move_gripper(1.0)
+            time.sleep(0.3)
+            self.move_gripper(0.0)
+            time.sleep(0.3)
+        
+        # Stop spinning
+        twist.angular.z = 0.0
+        self.cmd_vel_pub.publish(twist)
+        self.move_gripper(0.0)
+    
     def result_callback(self, msg):
         self.latest_result = msg.data
         if self.waiting_for_result:
@@ -184,6 +272,33 @@ class ThreeMovementTaiChiNode(Node):
             # Move arm
             self.move_arm(pose)
             time.sleep(self.step_duration + 0.1)
+
+    def evaluate_with_secondary_model(self):
+        self.get_logger().info("\n  Secondary evaluation (low vs incorrect)...")
+        
+        # Switch to model 5 (secondary quality classifier)
+        model_msg = Int32()
+        model_msg.data = 5
+        self.model_select_pub.publish(model_msg)
+        time.sleep(0.5)
+        
+        # Trigger evaluation
+        self.latest_result = None
+        self.waiting_for_result = True
+        
+        trigger_msg = Bool()
+        trigger_msg.data = True
+        self.trigger_pub.publish(trigger_msg)
+        
+        # Wait for result
+        wait_start = time.time()
+        while (time.time() - wait_start) < 5.0:
+            rclpy.spin_once(self, timeout_sec=0.1)
+            if self.latest_result is not None:
+                break
+        
+        self.waiting_for_result = False
+        return self.latest_result
 
     def teach_movement(self, movement_num):
         """Teach a single movement"""
@@ -245,10 +360,32 @@ class ThreeMovementTaiChiNode(Node):
         
         if self.latest_result == "correct":
             self.get_logger().info(f" {movement['name']} CORRECT!")
-            self.play_audio(self.audio_files["good_job"])
+            
+            # Play audio non-blocking
+            audio_process = self.play_audio(self.audio_files["good_job"], blocking=False)
+             
+            self.celebration_spin()
+            
+            # Wait for audio to finish
+            if audio_process:
+                audio_process.wait()
+                
         elif self.latest_result == "incorrect":
-            self.get_logger().info(f" {movement['name']} needs improvement")
-            self.play_audio(self.audio_files["try_again"])
+            if movement_num == 1:
+                self.get_logger().info(f" {movement['name']} incorrect, checking quality level...")
+                
+                secondary_result = self.evaluate_with_secondary_model()
+                
+                if secondary_result == "correct":
+                    self.get_logger().info("  Quality: LOW : Almost there!")
+                    self.play_audio(self.audio_files["low_quality"])
+                else:
+                    self.get_logger().info("  Quality: INCORRECT : Try again")
+                    self.play_audio(self.audio_files["try_again"])
+            else:
+                self.get_logger().info(f" {movement['name']} needs improvement")
+                self.play_audio(self.audio_files["try_again"])
+                
         elif self.latest_result == "no_person":
             self.get_logger().warn(" No person detected")
         else:
@@ -267,12 +404,17 @@ class ThreeMovementTaiChiNode(Node):
         self.get_logger().info(" Starting 3-Movement Tai Chi Session!")
         self.get_logger().info("="*60)
         
-        # Introduction
-        self.get_logger().info("\n Introduction")
-        self.play_audio(self.audio_files["intro"])
+        self.get_logger().info("\n Welcome to Tai Chi with Turtle Chi!")
+        audio_process = self.play_audio(self.audio_files["welcome"], blocking=False)
+        
+        self.talking_animation(duration=5.0)
+         
+        if audio_process:
+            audio_process.wait()
+        
         time.sleep(1.0)
         
-        # Teach movements 1-3 only
+        # Teach movements 1-3
         for movement_num in range(1, 4):
             self.teach_movement(movement_num)
         
@@ -291,9 +433,9 @@ def main(args=None):
         
         time.sleep(2.0)
         
-        # Run full session (movements 1-3)
+        # Run full session 
         node.run_full_session()
-        
+         
         # node.teach_movement(1)
         # node.teach_movement(2)
         # node.teach_movement(3)
