@@ -268,35 +268,35 @@ The robot will immediately begin the teaching session.
 
 **Disable Audio** (for testing/debugging):
 ```bash
-ros2 run turtle_chi three_movement_tai_chi_node \
+ros2 run turtle_chi interaction_node \
   --ros-args -p use_audio:=False
 ```
 
 **Change Movement Speed**:
 ```bash
 # Faster movements (1.0 second per pose)
-ros2 run turtle_chi three_movement_tai_chi_node \
+ros2 run turtle_chi interaction_node \
   --ros-args -p step_duration:=1.0
 
 # Slower movements (2.5 seconds per pose)
-ros2 run turtle_chi three_movement_tai_chi_node \
+ros2 run turtle_chi interaction_node \
   --ros-args -p step_duration:=2.5
 ```
 
 **Adjust Pose Detection Sensitivity**:
 ```bash
 # More strict detection (only high-confidence keypoints)
-ros2 run turtle_chi multi_model_tai_chi_pose_node \
+ros2 run turtle_chi pose_node \
   --ros-args -p min_keypoint_confidence:=0.5
 
 # More lenient detection
-ros2 run turtle_chi multi_model_tai_chi_pose_node \
+ros2 run turtle_chi pose_node \
   --ros-args -p min_keypoint_confidence:=0.2
 ```
 
 ### Testing Individual Components
 
-**Test Movement Execution Only** (modify `three_movement_tai_chi_node.py`):
+**Test Movement Execution Only** (modify `interaction_node.py`):
 ```python
 # In main() function, comment out:
 # node.run_full_session()
@@ -311,7 +311,7 @@ node.teach_movement(1)  # Test Movement 1 only
 **Test Pose Estimation Only**:
 ```bash
 # Terminal 1: Run pose node
-ros2 run turtle_chi multi_model_tai_chi_pose_node
+ros2 run turtle_chi pose_node
 
 # Terminal 2: Manually trigger evaluation
 ros2 topic pub --once /select_movement std_msgs/Int32 "{data: 1}"
