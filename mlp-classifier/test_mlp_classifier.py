@@ -26,11 +26,8 @@ def load_mlp_from_npz(model_path, scaler_path, input_dim, hidden_dims=(64,32)):
     return model, mean, std
 
 
-# ---------- main ----------
 if __name__ == "__main__":
-
     # Example ONE pose (17 keypoints × [x,y,score])
-    # Put your 17 keypoints here:
     keypoints = np.array([
         [
             0.19834792613983154,
@@ -119,22 +116,18 @@ if __name__ == "__main__":
         ]
     ])
 
-    # ---------- extract 43 features ----------
     features = extract_features(keypoints)
 
     input_dim = features.shape[0]    # should be 43
 
-    # ---------- load trained model ----------
     model, mean, std = load_mlp_from_npz(
         "models/movement_4/movement_4_mlp.npz",
         "models/movement_4/movement_4_scaler.npz",
         input_dim
     )
 
-    # ---------- normalize ----------
     features_norm = (features - mean) / std
 
-    # ---------- predict ----------
     pred = model.predict(features_norm.reshape(1, -1))[0]
     print(keypoints)
     print("\n=== Pose Classification Result ===")
