@@ -361,3 +361,6 @@ When running successfully, you should observe:
 - Keep hands away from gripper during animations
 - Emergency stop: `Ctrl+C` in any terminal
 - If arm moves erratically, kill nodes and restart from neutral position
+
+Here's a flowchart of our teaching flow :) 
+<img width="1178" height="2111" alt="flow" src="https://github.com/user-attachments/assets/8655df16-530d-43d4-940a-ae21fcae9189" />
