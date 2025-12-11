@@ -152,8 +152,8 @@ The system consists of two primary ROS nodes with the following communication st
                     ↓                                                    ↓
               
               ┌──────────────────────────────┐          ┌──────────────────────────────────┐
-              │  THREE_MOVEMENT_TAI_CHI_NODE │          │ MULTI_MODEL_TAI_CHI_POSE_NODE    │
-              │  (Orchestration & Control)   │          │ (Vision & Evaluation)            │
+              │      INTERACTION_NODE        │          │            POSE_NODE             │
+              │  (Orchestration & Control)   │          │       (Vision & Evaluation)      │
               ├──────────────────────────────┤          ├──────────────────────────────────┤
               │                              │          │                                  │
               │ PUBLISHES:                   │          │ SUBSCRIBES:                      │
@@ -180,8 +180,8 @@ The system consists of two primary ROS nodes with the following communication st
               │  • 3 Tai Chi movement arrays │          │   • movement_1_mlp_*.npz         │
               │  • Audio files (WAV)         │          │   • movement_2_mlp_*.npz         │
               │  • Neutral pose config       │          │   • movement_3_mlp_*.npz         │
-              │                              │          │   • movement_4_mlp_*.npz         │
               │                              │          │   • movement_1_low_mlp.npz       │
+              │                              │          │   • movement_2_low_mlp.npz       │
               │                              │          │   • *_scaler_*.npz (5 files)     │
               └──────────────────────────────┘          └──────────────────────────────────┘
               
