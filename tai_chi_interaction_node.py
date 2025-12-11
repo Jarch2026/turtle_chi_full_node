@@ -93,7 +93,7 @@ class ThreeMovementTaiChiNode(Node):
         }
 
         #Pose first audio files
-        self.pose_first_audio = ["pose_1_audio.wav", "pose_2_audio.WAV", "pose_3_audio.WAV"]
+        self.pose_first_audio = ["Pose_1_audio.WAV", "Pose_2_audio.WAV", "Pose_3_audio.WAV"]
 
         # Audio files
         self.audio_files = {
@@ -102,7 +102,7 @@ class ThreeMovementTaiChiNode(Node):
             "good_job": "good job ur pose worked.wav",
             "stay_for_evaluate": "stay_for_evaluate.wav",
             "try_again": "Jacks_Mom.wav",
-            "low_quality": "Jacks_Mom.wav", 
+            "low_arms": "low_arms.wav", 
         }
 
         self.neutral_pose = [0.0, -0.023, 0.003, 0.0]
@@ -260,7 +260,7 @@ class ThreeMovementTaiChiNode(Node):
         """Perform a movement's pose sequence"""
         movement = self.movements[movement_num]
         poses = movement['poses']
-        audios = movement['audios']
+        # audios = movement['audios']
 
         #if play_audio_cues:
             #self.play_audio(audios[0], blocking = False)
@@ -382,7 +382,7 @@ class ThreeMovementTaiChiNode(Node):
                 
                 if secondary_result == "correct":
                     self.get_logger().info("  Quality: LOW : Almost there!")
-                    self.play_audio(self.audio_files["low_quality"])
+                    self.play_audio(self.audio_files["low_arms"])
                 else:
                     self.get_logger().info("  Quality: INCORRECT : Try again")
                     self.play_audio(self.audio_files["try_again"])
