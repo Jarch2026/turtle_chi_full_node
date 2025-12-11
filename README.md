@@ -112,7 +112,8 @@ The `MLPBinaryClassifier` class implements a fully-connected neural network enti
 4. Trains for 600 epochs with learning rate 5e-3
 5. Saves model weights (W₁, b₁, W₂, b₂, W₃, b₃) to `.npz` file
 
-The training script reports loss and accuracy every 100 epochs, typically achieving >95% training accuracy. The models are stored in `models/ver3/`.
+The training script reports loss and accuracy every 100 epochs. The models are stored in `models/ver3/`. The accuracy for each model is as follows:
+1.  
 
 ### Integration & Information Flow
 
