@@ -4,6 +4,7 @@ from rclpy.node import Node
 from std_msgs.msg import String, Bool, Int32, Float64
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
+from omx_cpp_interface.msg import ArmGripperPosition
 from geometry_msgs.msg import Twist
 import time
 import os
@@ -19,9 +20,9 @@ class ThreeMovementTaiChiNode(Node):
         self.declare_parameter('result_topic', '/pose_result')
         self.declare_parameter('model_select_topic', '/select_movement')
         self.declare_parameter('arm_topic', '/arm_controller/joint_trajectory')
-        self.declare_parameter('gripper_topic', '/gripper_controller/gripper_cmd')
-        self.declare_parameter('cmd_vel_topic', '/cmd_vel')
-        self.declare_parameter('audio_dir', '/home/poojavegesna/intro_robo_ws/src/turtle_chi/turtle_chi/')
+        self.declare_parameter('gripper_topic', '/tb11/target_gripper_position')
+        self.declare_parameter('cmd_vel_topic', '/tb11/cmd_vel')
+        self.declare_parameter('audio_dir', '/home/jarch/intro_robo_ws/src/turtle_chi/turtle_chi/')
         self.declare_parameter('use_audio', True)
         self.declare_parameter('step_duration', 1.8)
         
@@ -43,7 +44,7 @@ class ThreeMovementTaiChiNode(Node):
         self.trigger_pub = self.create_publisher(Bool, self.trigger_topic, 10)
         self.arm_pub = self.create_publisher(JointTrajectory, self.arm_topic, 10)
         self.model_select_pub = self.create_publisher(Int32, self.model_select_topic, 10)
-        self.gripper_pub = self.create_publisher(Float64, self.gripper_topic, 10)
+        self.gripper_pub = self.create_publisher(ArmGripperPosition, self.gripper_topic, 10)
         self.cmd_vel_pub = self.create_publisher(Twist, self.cmd_vel_topic, 10)
         
         # Subscriber
@@ -80,23 +81,23 @@ class ThreeMovementTaiChiNode(Node):
             1: {
                 'name': 'Movement 1 : Flow Sequence',
                 'poses': self.movement_1_poses,
-                'audios': ["downward_flow.wav", "upward_flow.wav", "back_to_center.wav"]
             },
             2: {
                 'name': 'Movement 2 : Rotation Return',
                 'poses': self.movement_2_poses,
-                'audios': ["downward_flow.wav", "upward_flow.wav", "back_to_center.wav"]
             },
             3: {
                 'name': 'Movement 3 : Extended Cycle',
                 'poses': self.movement_3_poses,
-                'audios': ["downward_flow.wav", "upward_flow.wav", "back_to_center.wav"]
             }
         }
 
+        #Pose first audio files
+        self.pose_first_audio = ["pose_1_audio.wav", "pose_2_audio.WAV", "pose_3_audio.WAV"]
+
         # Audio files
         self.audio_files = {
-            "welcome": "intro.wav",
+            "welcome": "Welcome.wav",
             "intro": "intro.wav",
             "good_job": "good job ur pose worked.wav",
             "stay_for_evaluate": "stay_for_evaluate.wav",
@@ -209,8 +210,7 @@ class ThreeMovementTaiChiNode(Node):
         self.arm_pub.publish(msg)
     
     def move_gripper(self, position): 
-        msg = Float64()
-        msg.data = float(position)
+        msg = ArmGripperPosition(left_gripper=position,right_gripper=position)
         self.gripper_pub.publish(msg)
     
     def talking_animation(self, duration=5.0): 
@@ -218,32 +218,33 @@ class ThreeMovementTaiChiNode(Node):
         start_time = time.time()
         
         while (time.time() - start_time) < duration:
-            self.move_gripper(1.0)  # Open
+            self.move_gripper(0.01)  # Open
             time.sleep(0.3)
-            self.move_gripper(0.0)  # Close
+            self.move_gripper(-0.01)  # Close
             time.sleep(0.3)
         
-        self.move_gripper(0.0)  # End closed
-    
+        self.move_gripper(0.01)  # End open
+
     def celebration_spin(self): 
         self.get_logger().info("  Celebration spin!")
         
         # Calculate spin parameters
-        angular_velocity = 0.5  # rad/s
-        spin_duration = (2 * 3.14159) / angular_velocity  
+        angular_velocity = 0.8  # rad/s
+        spin_duration = (2*3.1459) / angular_velocity
         # Start spinning
         twist = Twist()
         twist.angular.z = angular_velocity
         
         start_time = time.time()
+
         while (time.time() - start_time) < spin_duration:
             self.cmd_vel_pub.publish(twist)
             
             # Open/close gripper while spinning
-            self.move_gripper(1.0)
-            time.sleep(0.3)
-            self.move_gripper(0.0)
-            time.sleep(0.3)
+            # self.move_gripper(1.0)
+            # time.sleep(0.8)
+            # self.move_gripper(0.0)
+            # time.sleep(0.8)
         
         # Stop spinning
         twist.angular.z = 0.0
@@ -260,14 +261,16 @@ class ThreeMovementTaiChiNode(Node):
         movement = self.movements[movement_num]
         poses = movement['poses']
         audios = movement['audios']
-        
-        audio_interval = len(poses) // len(audios) if play_audio_cues else 0
-        audio_idx = 0
-        
+
+        #if play_audio_cues:
+            #self.play_audio(audios[0], blocking = False)
+        # audio_interval = len(poses) // len(audios) if play_audio_cues else 0
+        # audio_idx = 0
+
         for i, pose in enumerate(poses): 
-            if play_audio_cues and audio_interval > 0 and i % audio_interval == 0 and audio_idx < len(audios):
-                self.play_audio(audios[audio_idx], blocking=False)
-                audio_idx += 1
+        #     if play_audio_cues and audio_interval > 0 and i % audio_interval == 0 and audio_idx < len(audios):
+        #         self.play_audio(audios[audio_idx], blocking=False)
+        #         audio_idx += 1
             
             # Move arm
             self.move_arm(pose)
@@ -309,7 +312,8 @@ class ThreeMovementTaiChiNode(Node):
         self.get_logger().info("─"*60)
         
         # Step 1: Silent demonstration
-        self.get_logger().info("\n Watch the demonstration (silent)...")
+        self.get_logger().info("\n Watch the demonstration")
+        self.play_audio(self.pose_first_audio[movement_num-1], blocking = False)
         self.perform_movement_sequence(movement_num, play_audio_cues=False)
         
         self.get_logger().info("  Holding final pose...")
@@ -324,7 +328,7 @@ class ThreeMovementTaiChiNode(Node):
         self.get_logger().info("\n Your turn - Follow along!")
         time.sleep(1.0)
         
-        self.perform_movement_sequence(movement_num, play_audio_cues=True)
+        self.perform_movement_sequence(movement_num, play_audio_cues=False)
 
         # Step 3: Hold for evaluation
         self.get_logger().info("\n Hold your final pose!")
@@ -417,7 +421,8 @@ class ThreeMovementTaiChiNode(Node):
         # Teach movements 1-3
         for movement_num in range(1, 4):
             self.teach_movement(movement_num)
-        
+            time.sleep(5)
+
         # Session complete
         self.get_logger().info("\n" + "="*60)
         self.get_logger().info(" Session Complete!")
@@ -435,7 +440,7 @@ def main(args=None):
         
         # Run full session 
         node.run_full_session()
-         
+        # node.celebration_spin()         
         # node.teach_movement(1)
         # node.teach_movement(2)
         # node.teach_movement(3)
