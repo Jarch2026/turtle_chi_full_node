@@ -135,84 +135,84 @@ This architecture enables real-time interaction (<2s evaluation latency) while m
 The system consists of two primary ROS nodes with the following communication structure:
 
 ```
-                    ┌─────────────────────────────────────────────────────────────────────┐
-                    │                     TurtleBot4 Robot Platform                       │
-                    │  ┌───────────────────────────────────────────────────────────────┐  │
-                    │  │  Hardware Interfaces                                          │  │
-                    │  │  - OpenManipulator Arm (4-DOF)                                │  │
-                    │  │  - Gripper Actuators                                          │  │
-                    │  │  - Mobile Base (Differential Drive)                           │  │
-                    │  │  - OAK-D Stereo Camera                                        │  │
-                    │  │  - Audio System (No Machine speakers)                         │  │
-                    │  └───────────────────────────────────────────────────────────────┘  │
-                    └─────────────────────────────────────────────────────────────────────┘
-                                                      ↕
-                          ┌────────────────────────────────────────────────────┐
-                          │                                                    │
-                          ↓                                                    ↓
-                    
-                    ┌──────────────────────────────┐          ┌──────────────────────────────────┐
-                    │  THREE_MOVEMENT_TAI_CHI_NODE │          │ MULTI_MODEL_TAI_CHI_POSE_NODE    │
-                    │  (Orchestration & Control)   │          │ (Vision & Evaluation)            │
-                    ├──────────────────────────────┤          ├──────────────────────────────────┤
-                    │                              │          │                                  │
-                    │ PUBLISHES:                   │          │ SUBSCRIBES:                      │
-                    │  - /trigger_capture (Bool)   │────────→ │  - /trigger_capture (Bool)       │
-                    │  - /select_movement (Int32)  │────────→ │  - /select_movement (Int32)      │
-                    │  - /arm_controller/          │          │  - /tbXX/oakd/rgb/preview/       │
-                    │    joint_trajectory          │          │    image_raw (Image)             │
-                    │    (JointTrajectory)         │          │                                  │
-                    │  - /tbXX/target_gripper_     │          │ PUBLISHES:                       │
-                    │    position                  │          │  • /pose_result (String)         │
-                    │    (ArmGripperPosition)      │          │                                  │
-                    │  - /tbXX/cmd_vel (Twist)     │          │ DISPLAYS:                        │
-                    │                              │          │  • OpenCV window with live feed  │
-                    │ SUBSCRIBES:                  │          │                                  │
-                    │  - /pose_result (String)     │←──────── │                                  │
-                    │                              │          │ COMPONENTS:                      │
-                    │ COMPONENTS:                  │          │  • MoveNet Pose Estimator        │
-                    │  • Movement Sequences        │          │  • 5× MLP Classifiers            │
-                    │  • Audio Player (aplay)      │          │  • Feature Extractor             │
-                    │  • Teaching Logic            │          │  • Normalization Engine          │
-                    │  • Celebration Behaviors     │          │                                  │
-                    │                              │          │ DATA:                            │
-                    │ DATA:                        │          │  models/ver3/                    │
-                    │  • 3 Tai Chi movement arrays │          │   • movement_1_mlp_*.npz         │
-                    │  • Audio files (WAV)         │          │   • movement_2_mlp_*.npz         │
-                    │  • Neutral pose config       │          │   • movement_3_mlp_*.npz         │
-                    │                              │          │   • movement_4_mlp_*.npz         │
-                    │                              │          │   • movement_1_low_mlp.npz       │
-                    │                              │          │   • *_scaler_*.npz (5 files)     │
-                    └──────────────────────────────┘          └──────────────────────────────────┘
-                    
-                                      MESSAGE FLOW SEQUENCE:
-                    
-                    1. [Orchestration] Publishes arm trajectory → Robot performs movement
-                    2. [Orchestration] Publishes Int32 on /select_movement → [Pose] Switches model
-                    3. [Orchestration] Publishes True on /trigger_capture → [Pose] Captures frame
-                    4. [Pose] Processes image with MoveNet → Extracts 17 keypoints
-                    5. [Pose] Computes 43 features → Classifies with selected MLP
-                    6. [Pose] Publishes result ("correct"/"incorrect") on /pose_result
-                    7. [Orchestration] Receives result → Executes celebration or correction
-                    8. [Orchestration] Returns arm to neutral → Proceeds to next movement
-                    
-                                       SUMMARY OF TOPICS USED:
-                    
-                    ┌─────────────────────────┬──────────────────┬───────────────┬─────────────────┐
-                    │ Topic Name              │ Message Type     │ Publisher     │ Subscriber      │
-                    ├─────────────────────────┼──────────────────┼───────────────┼─────────────────┤
-                    │ /trigger_capture        │ std_msgs/Bool    │ Orchestration │ Pose            │
-                    │ /select_movement        │ std_msgs/Int32   │ Orchestration │ Pose            │
-                    │ /pose_result            │ std_msgs/String  │ Pose          │ Orchestration   │
-                    │ /arm_controller/        │ trajectory_msgs/ │ Orchestration │ Arm Controller  │
-                    │   joint_trajectory      │   JointTrajectory│               │                 │
-                    │ /tb11/target_gripper_   │ omx_cpp_interface│ Orchestration │ Gripper Driver  │
-                    │   position              │   /ArmGripper... │               │                 │
-                    │ /tb11/cmd_vel           │ geometry_msgs/   │ Orchestration │ Base Controller │
-                    │                         │   Twist          │               │                 │
-                    │ /tb11/oakd/rgb/preview/ │ sensor_msgs/     │ Camera Driver │ Pose            │
-                    │   image_raw             │   Image          │               │                 │
-                    └─────────────────────────┴──────────────────┴───────────────┴─────────────────┘
+              ┌─────────────────────────────────────────────────────────────────────┐
+              │                     TurtleBot4 Robot Platform                       │
+              │  ┌───────────────────────────────────────────────────────────────┐  │
+              │  │  Hardware Interfaces                                          │  │
+              │  │  - OpenManipulator Arm (4-DOF)                                │  │
+              │  │  - Gripper Actuators                                          │  │
+              │  │  - Mobile Base (Differential Drive)                           │  │
+              │  │  - OAK-D Stereo Camera                                        │  │
+              │  │  - Audio System (No Machine speakers)                         │  │
+              │  └───────────────────────────────────────────────────────────────┘  │
+              └─────────────────────────────────────────────────────────────────────┘
+                                                ↕
+                    ┌────────────────────────────────────────────────────┐
+                    │                                                    │
+                    ↓                                                    ↓
+              
+              ┌──────────────────────────────┐          ┌──────────────────────────────────┐
+              │  THREE_MOVEMENT_TAI_CHI_NODE │          │ MULTI_MODEL_TAI_CHI_POSE_NODE    │
+              │  (Orchestration & Control)   │          │ (Vision & Evaluation)            │
+              ├──────────────────────────────┤          ├──────────────────────────────────┤
+              │                              │          │                                  │
+              │ PUBLISHES:                   │          │ SUBSCRIBES:                      │
+              │  - /trigger_capture (Bool)   │────────→ │  - /trigger_capture (Bool)       │
+              │  - /select_movement (Int32)  │────────→ │  - /select_movement (Int32)      │
+              │  - /arm_controller/          │          │  - /tbXX/oakd/rgb/preview/       │
+              │    joint_trajectory          │          │    image_raw (Image)             │
+              │    (JointTrajectory)         │          │                                  │
+              │  - /tbXX/target_gripper_     │          │ PUBLISHES:                       │
+              │    position                  │          │  • /pose_result (String)         │
+              │    (ArmGripperPosition)      │          │                                  │
+              │  - /tbXX/cmd_vel (Twist)     │          │ DISPLAYS:                        │
+              │                              │          │  • OpenCV window with live feed  │
+              │ SUBSCRIBES:                  │          │                                  │
+              │  - /pose_result (String)     │←──────── │                                  │
+              │                              │          │ COMPONENTS:                      │
+              │ COMPONENTS:                  │          │  • MoveNet Pose Estimator        │
+              │  • Movement Sequences        │          │  • 5× MLP Classifiers            │
+              │  • Audio Player (aplay)      │          │  • Feature Extractor             │
+              │  • Teaching Logic            │          │  • Normalization Engine          │
+              │  • Celebration Behaviors     │          │                                  │
+              │                              │          │ DATA:                            │
+              │ DATA:                        │          │  models/ver3/                    │
+              │  • 3 Tai Chi movement arrays │          │   • movement_1_mlp_*.npz         │
+              │  • Audio files (WAV)         │          │   • movement_2_mlp_*.npz         │
+              │  • Neutral pose config       │          │   • movement_3_mlp_*.npz         │
+              │                              │          │   • movement_4_mlp_*.npz         │
+              │                              │          │   • movement_1_low_mlp.npz       │
+              │                              │          │   • *_scaler_*.npz (5 files)     │
+              └──────────────────────────────┘          └──────────────────────────────────┘
+              
+                                MESSAGE FLOW SEQUENCE:
+              
+              1. [Orchestration] Publishes arm trajectory → Robot performs movement
+              2. [Orchestration] Publishes Int32 on /select_movement → [Pose] Switches model
+              3. [Orchestration] Publishes True on /trigger_capture → [Pose] Captures frame
+              4. [Pose] Processes image with MoveNet → Extracts 17 keypoints
+              5. [Pose] Computes 43 features → Classifies with selected MLP
+              6. [Pose] Publishes result ("correct"/"incorrect") on /pose_result
+              7. [Orchestration] Receives result → Executes celebration or correction
+              8. [Orchestration] Returns arm to neutral → Proceeds to next movement
+              
+                                 SUMMARY OF TOPICS USED:
+              
+              ┌─────────────────────────┬──────────────────┬───────────────┬─────────────────┐
+              │ Topic Name              │ Message Type     │ Publisher     │ Subscriber      │
+              ├─────────────────────────┼──────────────────┼───────────────┼─────────────────┤
+              │ /trigger_capture        │ std_msgs/Bool    │ Orchestration │ Pose            │
+              │ /select_movement        │ std_msgs/Int32   │ Orchestration │ Pose            │
+              │ /pose_result            │ std_msgs/String  │ Pose          │ Orchestration   │
+              │ /arm_controller/        │ trajectory_msgs/ │ Orchestration │ Arm Controller  │
+              │   joint_trajectory      │   JointTrajectory│               │                 │
+              │ /tb11/target_gripper_   │ omx_cpp_interface│ Orchestration │ Gripper Driver  │
+              │   position              │   /ArmGripper... │               │                 │
+              │ /tb11/cmd_vel           │ geometry_msgs/   │ Orchestration │ Base Controller │
+              │                         │   Twist          │               │                 │
+              │ /tb11/oakd/rgb/preview/ │ sensor_msgs/     │ Camera Driver │ Pose            │
+              │   image_raw             │   Image          │               │                 │
+              └─────────────────────────┴──────────────────┴───────────────┴─────────────────┘
 ```
 
 **Key Design Decisions:**
