@@ -89,7 +89,6 @@ class MLPBinaryClassifier:
 
         self.lr = lr
 
-    #### following codes implemented using FA24 CV project code 
     @staticmethod
     def relu(x):
         return np.maximum(0, x)
