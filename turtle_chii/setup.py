@@ -21,8 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
 		'camera-images = turtle_chi.camera_images:main',
-		'pose-node = turtle_chi.tai_chi_pose_node:main',
-		'interaction-node = turtle_chi.tai_chi_interaction_node:main',
+		'pose-node = turtle_chi.tai_pose_node:main',
+		'interaction-node = turtle_chi.interaction_node:main',
         ],
     },
 )
