@@ -58,20 +58,7 @@ class ThreeMovementTaiChiNode(Node):
         self.latest_result = None
         self.waiting_for_result = False
 
-        # Movement 1 
-        self.movement_1_poses = [
-            [0.0, -0.023, 0.003, 0.0],
-            [0.0, 1.499, 0.209, 0.0],
-            [0.0, 1.496, -0.407, 0.0], 
-            [0.0, 1.496, -0.407, 0.0],
-            [0.0, 1.116, -0.699, 0.0],
-            [0.0, 0.545, -0.897, 0.0],
-            [0.0, 0.545, -1.197, 0.0],
-            [0.0, 0.545, -1.197, 0.0],
-            [0.0, 0.003, -1.197, 0.0],
-            [0.0, -0.402, -1.197, 0.599],
-            [0.0, -0.402, -1.197, 0.0],
-        ]
+        self.movement_1_poses = self._create_smooth_movement_1()
  
         self.movement_2_poses = self._create_smooth_movement_2()
  
@@ -115,7 +102,7 @@ class ThreeMovementTaiChiNode(Node):
         self.get_logger().info(f"  Step duration: {self.step_duration}s")
         self.get_logger().info("="*60)
     
-    def _interpolate_poses(self, start_pose, end_pose, num_steps=3): 
+     def _interpolate_poses(self, start_pose, end_pose, num_steps=3): 
         interpolated = []
         for i in range(1, num_steps + 1):
             alpha = i / (num_steps + 1)
@@ -126,11 +113,34 @@ class ThreeMovementTaiChiNode(Node):
             interpolated.append(interp_pose)
         return interpolated
     
+    def _create_smooth_movement_1(self): 
+        key_poses = [
+            [0.0, -0.023, 0.003, 0.0],
+            [0.0, 1.499, 0.209, 0.0],
+            [0.0, 1.496, -0.407, 0.0],
+            [0.0, 1.116, -0.699, 0.0],
+            [0.0, 0.545, -1.197, 0.0],
+            [0.0, 0.003, -1.197, 0.599],
+            [0.0, -0.402, -1.197, 0.0],
+            [0.0, -0.023, 0.003, 0.0],
+        ]
+    
+        smooth_poses = []
+        for i in range(len(key_poses)):
+            smooth_poses.append(key_poses[i])
+            if i < len(key_poses) - 1:
+                # Add 2 interpolation poses between each key pose
+                interpolated = self._interpolate_poses(key_poses[i], key_poses[i+1], num_steps=2)
+                smooth_poses.extend(interpolated)
+        
+        return smooth_poses
+    
     def _create_smooth_movement_2(self): 
         key_poses = [
             [-0.008, -1.005, 0.715, 0.302],   # Start
             [1.571, -1.950, -2.0, 0.0],        # Large rotation
             [1.571, 0.0, -2.0, 0.0],           # Arms extended
+            [1.571, -0.600, -1.0, -0.3],
             [1.571, -1.300, 1.150, -1.4],      # Complex position
         ]
         
@@ -147,14 +157,13 @@ class ThreeMovementTaiChiNode(Node):
     def _create_smooth_movement_3(self): 
         key_poses = [
             [-0.008, -1.005, 0.715, 0.302],    # Start
-            [1.571, 1.950, -2.0, 0.0],          # Opposite rotation
+            [2.2, 2.0, -2.0, 0.0],          # Opposite rotation
             [1.571, 0.0, -2.0, 0.0],            # Extended
             [1.571, -1.300, 1.050, 0.0],        # Transition
             [1.57, 1.249, -0.451, -0.499],      # Complex pose
             [1.571, 0.0, -2.0, 0.0],            # Extended again
             [1.571, -1.300, 1.050, 0.0],        # Repeat transition
-            [1.57, 1.249, -0.451, -0.499],      # Repeat complex
-            [-0.008, -1.005, 0.715, 0.302],    # End
+            [1.57, 1.249, -0.451, -0.499],    # End
         ]
         
         smooth_poses = []
@@ -162,7 +171,7 @@ class ThreeMovementTaiChiNode(Node):
             smooth_poses.append(key_poses[i])
             if i < len(key_poses) - 1:
                 # Add 1 interpolation pose between each ? maybe 2? 
-                interpolated = self._interpolate_poses(key_poses[i], key_poses[i+1], num_steps=3)
+                interpolated = self._interpolate_poses(key_poses[i], key_poses[i+1], num_steps=4)
                 smooth_poses.extend(interpolated)
         
         return smooth_poses
