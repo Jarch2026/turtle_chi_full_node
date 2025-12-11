@@ -334,14 +334,19 @@ When running successfully, you should observe:
    - Robot demonstrates 11-pose sequence
    - User follows along
    - Robot evaluates final pose
-   - Celebration spin if correct, or corrective feedback
+   - Celebration spin if correct
+   - If incorrect, run additional classification model.
+     - If arms are low, provide corrective feedback and start Movement 1 Teaching again.
 
 3. **Movement 2 Teaching** (~50s)
    - Similar structure with 12-pose sequence
+   - If incorrect, run additional classification model.
+     - If legs are too far apart, provide corrective feedback and start Movement 2 Teaching again.
    - Includes complex rotations
 
 4. **Movement 3 Teaching** (~90s)
    - Extended 28-pose sequence
+   - No additional corrective feedback as Movement 1 or 2.
    - Multiple repetitions of key poses
 
 5. **Session Complete**
