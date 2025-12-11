@@ -84,8 +84,8 @@ The `extract_features()` function transforms raw keypoints into a 43-dimensional
 This feature set was designed through iterative experimentation to capture the essential geometric properties that distinguish correct from incorrect Tai Chi poses.
 
 **Multi-Model Classification System:**
-The node loads and manages 5 distinct MLP (Multi-Layer Perceptron) classifiers at startup:
-- **Models 1-4**: Movement-specific binary classifiers trained to evaluate correctness of each Tai Chi movement
+The node loads and manages 4 distinct MLP (Multi-Layer Perceptron) classifiers at startup:
+- **Models 1-3**: Movement-specific binary classifiers trained to evaluate correctness of each Tai Chi movement
 - **Model 1 Low**: Secondary quality classifier for Movement 1, distinguishing "low arms" from "generalized incorrect"
 
 Model selection occurs dynamically via the `/select_movement` topic, allowing the orchestration node to switch evaluators as the teaching session progresses. Each model maintains its own scaler parameters (mean, std) loaded from `.npz` files, ensuring features are normalized identically to training conditions.
