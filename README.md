@@ -240,11 +240,11 @@ Ensure the following are installed on your TurtleBot4:
    # Make sure turtle_chi package exists with the following structure:
    # turtle_chi/
    # ├── turtle_chi/
-   # │   ├── three_movement_tai_chi_node.py
-   # │   ├── multi_model_tai_chi_pose_node.py
+   # │   ├── interaction_node.py
+   # │   ├── pose_node.py
    # │   ├── *.WAV (audio files)
-   # ├── models/
-   # │   └── ver3/
+   # |   ├──- models/
+   # │      └── ver3/
    # │       ├── movement_1_mlp_scratch_ver3.npz
    # │       ├── movement_1_scaler_scratch_ver3.npz
    # │       ├── ... (other model files)
