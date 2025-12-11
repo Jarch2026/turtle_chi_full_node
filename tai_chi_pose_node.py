@@ -159,7 +159,7 @@ class MultiModelTaiChiPoseNode(Node):
     def __init__(self):
         super().__init__('tai_chi_pose_node')
         
-        self.declare_parameter('camera_topic', '/tb03/oakd/rgb/preview/image_raw')
+        self.declare_parameter('camera_topic', '/tb11/oakd/rgb/preview/image_raw')
         self.declare_parameter('trigger_topic', '/trigger_capture')
         self.declare_parameter('result_topic', '/pose_result')
         self.declare_parameter('model_select_topic', '/select_movement')
@@ -205,8 +205,8 @@ class MultiModelTaiChiPoseNode(Node):
                 self.get_logger().warn(f"  Movement {i} model not found!")
         
         # Load model 5  
-        model_5_path = os.path.join(self.models_dir, 'movement_5_low_mlp_scratch_ver3.npz')
-        scaler_5_path = os.path.join(self.models_dir, 'movement_5_low_scaler_scratch_ver3.npz')
+        model_5_path = os.path.join(self.models_dir, 'movement_1_low_mlp.npz')
+        scaler_5_path = os.path.join(self.models_dir, 'movement_1_low_scaler.npz')
         
         if os.path.exists(model_5_path) and os.path.exists(scaler_5_path):
             model, mean, std = load_mlp_model(model_5_path, scaler_5_path, input_dim=43, hidden_dims=(64, 32))
