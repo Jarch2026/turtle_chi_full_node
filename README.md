@@ -5,9 +5,9 @@
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Motivation](#motivation)
-3. [Prior Research & Identified Gaps](#prior-research--identified-gaps)
+1. [Motivation](#motivation)
+2. [Prior Research & Identified Gaps](#prior-research--identified-gaps)
+3. [References](#references)
 4. [System Architecture](#system-architecture)
    - [Movement Control & Orchestration Node](#1-movement-control--orchestration-node-interaction_nodepy)
    - [Pose Estimation & Classification Node](#2-pose-estimation--classification-node-pose_nodepy)
@@ -27,18 +27,17 @@
    - [Safety Notes](#safety-notes)
 8. [System Flow](#system-flow)
 9. [Demo Videos](#demo-videos)
-10. [References](#references)
 
 ---
 
-## 1. Motivation
+## Motivation
 
 As the global population ages and demands for geriatric care continue to increase, Tai Chi represents an accessible, meaningful activity, and this project aims to make that instruction more engaging 
 and supportive through robotics. Tai Chi is an exercise that involves flowing gentle movements, originated as an ancient martial art in China. We explore a human–robot interaction (HRI) scenario in which a
 robot performs the role of a Tai Chi instructor, guiding a user through a predefined sequence of movements. By using computer vision (CV), the robot will observe the human's pose, evaluate performance, 
 and provide corrective verbal feedback.
 
-## 2. Prior Research + Identified Gaps
+## Prior Research + Identified Gaps
 
 Several studies have explored robot-mediated Tai Chi or dance instruction for adults. Recent vision-based Tai Chi evaluation systems have focused on movement assessment without robotic embodiment. 
 Zhao applies deep learning models to evaluate the quality of Tai Chi movements and provide personalized training insights, but it does not incorporate a physical robot capable of demonstrating or 
