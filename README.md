@@ -522,4 +522,4 @@ If we had more time to improve on this project, we would first add additional su
 ## Takeaways
 - HCI systems require tradeoffs to ensure the best user experience possible
 - Make sure you're happy with poses before recording voice-overs
-- When trying to make a robot with one arm perform tai chi poses, pick poses that have vertical symmetry
+- When trying to make a robot with one arm perform tai chi poses, pick poses that have vertical symmetry :)
