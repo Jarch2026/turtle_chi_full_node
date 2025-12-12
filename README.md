@@ -71,7 +71,7 @@ teaching context. This project aims to address this gap to explore how robots ca
 The Turtle Chi system implements a closed-loop human-robot interaction pipeline for Tai Chi instruction, combining robotic demonstration, real-time pose evaluation, and adaptive feedback.
 The architecture consists of three major components that work in concert to create an engaging learning experience.
 
-### 1. Movement Control & Orchestration Node (`[interaction_node.py](https://github.com/Jarch2026/turtle_chi_full_node/blob/main/turtle_chi/turtle_chi/interaction_node.py)`)
+### 1. Movement Control & Orchestration Node (`interaction_node.py`). [Code](https://github.com/Jarch2026/turtle_chi_full_node/blob/main/turtle_chi/turtle_chi/interaction_node.py)
 
 This ROS node serves as the central controller, managing the entire teaching session workflow. The key components include:
 
@@ -103,7 +103,7 @@ The `teach_movement()` method implements a structured four-step pedagogical sequ
 **Multi-Model Evaluation Strategy:**
 For Movement 1, the system implements a two-tier evaluation approach. If the primary classifier returns "incorrect," it switches to a secondary model (model 1 low) that distinguishes between "arms are low" and "general incorrect". This provides more nuanced feedback, directing users to specific corrections (such as "lower your arms" in this case) rather than generic "try again" messages.
 
-### 2. Pose Estimation & Classification Node (`[pose_node.py](https://github.com/Jarch2026/turtle_chi_full_node/blob/main/turtle_chi/turtle_chi/pose_node.py)`)
+### 2. Pose Estimation & Classification Node (`pose_node.py`). [Code](https://github.com/Jarch2026/turtle_chi_full_node/blob/main/turtle_chi/turtle_chi/pose_node.py)
 
 This node handles real-time computer vision processing and pose evaluation using a pipeline that combines state-of-the-art pose estimation with custom-trained classifiers.
 
@@ -133,7 +133,7 @@ Model selection occurs dynamically via the `/select_movement` topic, allowing th
 **Classification Architecture:**
 Each MLP uses a 43 -> 64 -> 32 -> 1 architecture with ReLU activation in hidden layers and sigmoid output. The models were trained from scratch (not using scikit-learn) with weight initialization (Xavier/He) and binary cross-entropy loss. This custom implementation provides full control over the classification pipeline and eliminates external dependencies in the ROS node.
 
-### 3. Training & Validation Pipeline (`[train_mlp_classifier.py](https://github.com/Jarch2026/turtle_chi_full_node/blob/main/mlp-classifier/train_mlp_classifier.py)`, `[test_mlp_classifier.py](https://github.com/Jarch2026/turtle_chi_full_node/blob/main/mlp-classifier/test_mlp_classifier.py)`)
+### 3. Training & Validation Pipeline (`train_mlp_classifier.py`, `test_mlp_classifier.py`). [Test Code](https://github.com/Jarch2026/turtle_chi_full_node/blob/main/mlp-classifier/test_mlp_classifier.py) + [Train Code](https://github.com/Jarch2026/turtle_chi_full_node/blob/main/mlp-classifier/train_mlp_classifier.py)
 
 **Data Collection & Annotation:**
 The training data consists of JSON files containing MoveNet-extracted keypoints from demonstration videos. Each movement has separate `correct.json` and `incorrect.json` files in the `dataset/` directory, with keypoints stored as 17×3 arrays (y, x, confidence). This dataset was collected by recording multiple users attempting each Tai Chi movement and manually labeling demonstrations.
@@ -174,9 +174,9 @@ This architecture enables real-time interaction (<2s evaluation latency) while m
 
 To train the pose classification models, we first need to collect images of people performing each Tai Chi movement in both correct and incorrect forms.
 
-#### Camera Capture Script
+#### Camera Capture Script. [Code](https://github.com/Jarch2026/turtle_chi_full_node/blob/main/turtle_chi/turtle_chi/camera_images.py)
 
-Use the `[camera_capture.py](https://github.com/Jarch2026/turtle_chi_full_node/blob/main/turtle_chi/turtle_chi/camera_images.py)` script to automatically capture images from the TurtleBot's OAK-D camera:
+Use the `camera_capture.py` script to automatically capture images from the TurtleBot's OAK-D camera:
 ```python
 # Location: turtle_chi/turtle_chi/camera_capture.py
 # This script subscribes to the TurtleBot camera and saves 20 images
