@@ -142,9 +142,18 @@ class ThreeMovementTaiChiNode(Node):
         }
 
         # Generate smooth interpolated pose sequences for each movement
-        self.movement_1_poses = self._create_smooth_movement_1()
-        self.movement_2_poses = self._create_smooth_movement_2()
-        self.movement_3_poses = self._create_smooth_movement_3()
+        self.movement_1_poses = self._create_smooth_movement(
+            self.MOVEMENT_KEY_POSES[1]['key_poses'], 
+            self.MOVEMENT_KEY_POSES[1]['num_steps']
+        )
+        self.movement_2_poses = self._create_smooth_movement(
+            self.MOVEMENT_KEY_POSES[2]['key_poses'], 
+            self.MOVEMENT_KEY_POSES[2]['num_steps']
+        )
+        self.movement_3_poses = self._create_smooth_movement(
+            self.MOVEMENT_KEY_POSES[3]['key_poses'], 
+            self.MOVEMENT_KEY_POSES[3]['num_steps']
+        )
 
         # Dictionary organizing all three movements with metadata.
         # Was more relevant when we had multiple audio files per movement. This organization is now redundant.
@@ -219,6 +228,7 @@ class ThreeMovementTaiChiNode(Node):
 
     
     def _create_smooth_movement(self, key_poses, num_steps=2):
+        "Create a smooth movement sequence from key poses using interpolation"
         smooth_poses = []
         for i in range(len(key_poses)):
             smooth_poses.append(key_poses[i])
@@ -229,13 +239,17 @@ class ThreeMovementTaiChiNode(Node):
         
     def play_audio(self, filename, blocking=True):
         """
+        Provides audio feedback to guide the user during the session.
+        Can operate in blocking mode (wait for audio to finish) or non-blocking mode
+        (continue execution while audio plays).
         """
+        # Check if audio is enabled
         if not self.use_audio:
             self.get_logger().info(f"[Audio: {filename}]")
             return None
-        
+        # Construct full path to audio file
         audio_path = os.path.join(self.audio_dir, filename)
-        
+        # Verify file exists
         if not os.path.exists(audio_path):
             self.get_logger().warn(f"Audio file not found: {audio_path}")
             return None
@@ -244,9 +258,11 @@ class ThreeMovementTaiChiNode(Node):
             self.get_logger().info(f" {filename}")
             
             if blocking:
+                # Wait for audio to complete before returning
                 subprocess.run(['aplay', '-q', audio_path], check=True)
                 return None
             else:
+                # Start audio and return process handle immediately
                 process = subprocess.Popen(['aplay', '-q', audio_path])
                 return process
                 
@@ -255,14 +271,27 @@ class ThreeMovementTaiChiNode(Node):
             return None
     
     def move_arm(self, joint_positions, duration_sec=None):
+        """
+        Command the robotic arm to move to specified joint positions.
+        
+        Publishes a JointTrajectory message to smoothly move the arm to the
+        target position over the specified duration.
+        
+        Note: Trajectory contains single point (direct movement to target)
+        """
+        # Use default duration if not specified
         if duration_sec is None:
             duration_sec = self.step_duration
             
+        # Create trajectory message
         msg = JointTrajectory()
         msg.joint_names = ['joint1', 'joint2', 'joint3', 'joint4']
         
+        # Create trajectory point with target positions and timing
         point = JointTrajectoryPoint()
         point.positions = joint_positions
+
+        # Convert duration to ROS2 Duration format
         point.time_from_start = Duration(
             sec=int(duration_sec), 
             nanosec=int((duration_sec % 1) * 1e9)
@@ -272,13 +301,22 @@ class ThreeMovementTaiChiNode(Node):
         self.arm_pub.publish(msg)
     
     def move_gripper(self, position): 
+        """
+        Set the gripper position for both left and right fingers of the robot
+        """
         msg = ArmGripperPosition(left_gripper=position,right_gripper=position)
         self.gripper_pub.publish(msg)
     
     def talking_animation(self, duration=5.0): 
+        """
+        Perform a "talking" animation by rhythmically opening and closing the gripper to
+        create an engaging visual effect during welcome messages or explanations,
+        making the robot appear more animated and friendly.
+        """
         self.get_logger().info("  Robot talking...")
         start_time = time.time()
         
+        # Continue animation until duration expires
         while (time.time() - start_time) < duration:
             self.move_gripper(0.01)  # Open
             time.sleep(0.3)
@@ -288,8 +326,11 @@ class ThreeMovementTaiChiNode(Node):
         self.move_gripper(0.01)  # End open
 
     def celebration_spin(self): 
+         """
+        Perform a celebratory 360-degree spin when user completes a pose correctly.
+        Provides positive reinforcement through robot movement!
+        """
         self.get_logger().info("  Celebration spin!")
-        
         # Calculate spin parameters
         angular_velocity = 0.8  # rad/s
         spin_duration = (2*3.1459) / angular_velocity
@@ -299,14 +340,9 @@ class ThreeMovementTaiChiNode(Node):
         
         start_time = time.time()
 
+        # Continue spinning until full rotation complete
         while (time.time() - start_time) < spin_duration:
             self.cmd_vel_pub.publish(twist)
-            
-            # Open/close gripper while spinning
-            # self.move_gripper(1.0)
-            # time.sleep(0.8)
-            # self.move_gripper(0.0)
-            # time.sleep(0.8)
         
         # Stop spinning
         twist.angular.z = 0.0
@@ -314,38 +350,44 @@ class ThreeMovementTaiChiNode(Node):
         self.move_gripper(0.0)
     
     def result_callback(self, msg):
+         """
+        Callback function to receive pose evaluation results from computer vision node.
+        Updates the latest_result variable when new evaluation arrives. Only logs
+        results when actively waiting for evaluation.
+        """
         self.latest_result = msg.data
         if self.waiting_for_result:
             self.get_logger().info(f" Result: {msg.data}")
 
     def perform_movement_sequence(self, movement_num, play_audio_cues=False):
-        """Perform a movement's pose sequence"""
+        """
+        Execute the complete pose sequence for a specified movement.
+        Steps through all poses in the movement, moving the arm smoothly from
+        one position to the next. Can also play audio cues during execution.
+        """
         movement = self.movements[movement_num]
         poses = movement['poses']
-        # audios = movement['audios']
-
-        #if play_audio_cues:
-            #self.play_audio(audios[0], blocking = False)
-        # audio_interval = len(poses) // len(audios) if play_audio_cues else 0
-        # audio_idx = 0
 
         for i, pose in enumerate(poses): 
-        #     if play_audio_cues and audio_interval > 0 and i % audio_interval == 0 and audio_idx < len(audios):
-        #         self.play_audio(audios[audio_idx], blocking=False)
-        #         audio_idx += 1
-            
-            # Move arm
+            # Move arm to pose and wait for completion + settling time
             self.move_arm(pose)
             time.sleep(self.step_duration + 0.1)
 
     def evaluate_with_secondary_model(self):
-        self.get_logger().info("\n  Secondary evaluation (low vs incorrect)...")
+        """
+        Perform secondary evaluation to distinguish between "low arm" and "incorrect" poses.
         
-        # Switch to model 5 (secondary quality classifier)
+        Used specifically for Movement 1 when initial evaluation returns "incorrect".
+        Switches to a specialized model (model 5 : movement 1 low) that provides finer-grained feedback
+        about pose quality.
+        """
+        self.get_logger().info("\n  Secondary evaluation (low arm vs incorrect)...")
+        
+        # Switch to model 5 or Movement 1 low (secondary quality classifier)
         model_msg = Int32()
         model_msg.data = 5
         self.model_select_pub.publish(model_msg)
-        time.sleep(0.5)
+        time.sleep(0.5) # Allow time for model to load
         
         # Trigger evaluation
         self.latest_result = None
@@ -366,22 +408,41 @@ class ThreeMovementTaiChiNode(Node):
         return self.latest_result
 
     def teach_movement(self, movement_num):
-        """Teach a single movement"""
+        """
+        Complete teaching workflow for a single Tai Chi movement.
+        
+        This is the core teaching method that orchestrates the entire learning cycle:
+        1. Silent demonstration - robot shows the movement
+        2. Guided practice - user follows along with robot
+        3. Pose evaluation - computer vision assesses user's final pose
+        4. Feedback - audio and visual response based on performance
+
+        Special Feature : Movement 1 Two-Tier Evaluation:
+            Movement 1 uses a secondary model to distinguish between:
+            - "Low quality but acceptable" (arms too low, almost correct)
+            - "Incorrect" (needs different improvement)
+
+        Same thing for Movement 2, but with legs not being wide enough.
+        """
         movement = self.movements[movement_num]
         
         self.get_logger().info("\n" + "─"*60)
         self.get_logger().info(f" Teaching {movement['name']}")
         self.get_logger().info("─"*60)
         
-        # Step 1: Silent demonstration
-        self.get_logger().info("\n Watch the demonstration")
+        # Step 1: demonstration
+        self.get_logger().info("\n Watch the demonstration
+                        
+        # Play movement-specific introduction (non-blocking so movement can start)
         self.play_audio(self.pose_first_audio[movement_num-1], blocking = False)
+        # Perform the complete movement sequence
         self.perform_movement_sequence(movement_num, play_audio_cues=False)
-        
+                               
+        # Hold final pose for user to observe
         self.get_logger().info("  Holding final pose...")
         time.sleep(2.0)
         
-        # Return to neutral
+        # Return to neutral/starting position
         self.get_logger().info("  Returning to start...")
         self.move_arm(self.neutral_pose, duration_sec=1.5)
         time.sleep(2.0)
@@ -389,7 +450,7 @@ class ThreeMovementTaiChiNode(Node):
         # Step 2: User's turn with audio cues
         self.get_logger().info("\n Your turn - Follow along!")
         time.sleep(1.0)
-        
+        # Perform movement again - user mirrors the robot
         self.perform_movement_sequence(movement_num, play_audio_cues=False)
 
         # Step 3: Hold for evaluation
@@ -402,12 +463,13 @@ class ThreeMovementTaiChiNode(Node):
         model_msg = Int32()
         model_msg.data = movement_num
         self.model_select_pub.publish(model_msg)
-        time.sleep(0.5)
+        time.sleep(0.5) # Allow model switching time
 
         self.get_logger().info(f" Evaluating {movement['name']}...")
         self.latest_result = None
         self.waiting_for_result = True
 
+        # Send trigger to computer vision node
         trigger_msg = Bool()
         trigger_msg.data = True
         self.trigger_pub.publish(trigger_msg)
@@ -427,9 +489,10 @@ class ThreeMovementTaiChiNode(Node):
         if self.latest_result == "correct":
             self.get_logger().info(f" {movement['name']} CORRECT!")
             
-            # Play audio non-blocking
+            # Play success audio (non-blocking so spin can start)
             audio_process = self.play_audio(self.audio_files["good_job"], blocking=False)
-             
+            
+            # Perform celebration animation
             self.celebration_spin()
             
             # Wait for audio to finish
@@ -438,17 +501,21 @@ class ThreeMovementTaiChiNode(Node):
                 
         elif self.latest_result == "incorrect":
             if movement_num == 1:
+                # Movement 1 special case: Two-tier evaluation system (similar for Movement 2)
                 self.get_logger().info(f" {movement['name']} incorrect, checking quality level...")
                 
+                # Use secondary model to determine if it's "arms are too low" or gnerally "incorrect"
                 secondary_result = self.evaluate_with_secondary_model()
                 
                 if secondary_result == "correct":
+                    # Secondary model says acceptable (just low arms)
                     self.get_logger().info("  Quality: LOW : Almost there!")
                     self.play_audio(self.audio_files["low_arms"])
                 else:
                     self.get_logger().info("  Quality: INCORRECT : Try again")
                     self.play_audio(self.audio_files["try_again"])
             else:
+                # Simple incorrect feedback
                 self.get_logger().info(f" {movement['name']} needs improvement")
                 self.play_audio(self.audio_files["try_again"])
                 
@@ -465,22 +532,29 @@ class ThreeMovementTaiChiNode(Node):
         time.sleep(2.0)
 
     def run_full_session(self):
-        """Run complete 3-movement teaching session"""
+        """
+        Execute the complete 3-movement Tai Chi teaching session.
+        This is our main entry point for the full teaching session. Orchestrates
+        the entire user experience from welcome to completion!!
+        """
+        # session start
         self.get_logger().info("\n" + "="*60)
         self.get_logger().info(" Starting 3-Movement Tai Chi Session!")
         self.get_logger().info("="*60)
-        
+        # welcome sequence
         self.get_logger().info("\n Welcome to Tai Chi with Turtle Chi!")
+        # Play welcome audio
         audio_process = self.play_audio(self.audio_files["welcome"], blocking=False)
-        
+        # Perform engaging talking animation 
         self.talking_animation(duration=5.0)
-         
+        
+        # Ensure welcome audio finishes before proceeding
         if audio_process:
             audio_process.wait()
         
         time.sleep(1.0)
         
-        # Teach movements 1-3
+        # Teach all three movements sequentially
         for movement_num in range(1, 4):
             self.teach_movement(movement_num)
             time.sleep(5)
@@ -502,7 +576,8 @@ def main(args=None):
         
         # Run full session 
         node.run_full_session()
-        # node.celebration_spin()         
+        
+        # Alternative testing modes if you just want one movement (commented out):     
         # node.teach_movement(1)
         # node.teach_movement(2)
         # node.teach_movement(3)
