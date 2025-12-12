@@ -27,6 +27,9 @@
    - [Safety Notes](#safety-notes)
 8. [System Flow](#system-flow)
 9. [Demo Videos](#demo-videos)
+10. [Challenges](#challenges)
+11. [Future Work](#future-work)
+12. [Takeaways](#takeaways)
 
 ---
 
@@ -480,12 +483,12 @@ When running successfully, you should observe:
 - Emergency stop: `Ctrl+C` in any terminal
 - If arm moves erratically, kill nodes and restart from neutral position
 
-# System Flow
+## System Flow
 Here's a flowchart of our teaching flow :) 
 <img width="1178" height="2111" alt="flow" src="https://github.com/user-attachments/assets/8655df16-530d-43d4-940a-ae21fcae9189" />
 
 
-### Demo videos:
+## Demo videos:
 #### All movements (1-3) without incorrect (sped up videos to meet Github file upload requirement):
 Full view:
 
@@ -508,3 +511,15 @@ https://github.com/user-attachments/assets/eed521ba-ac1b-45b0-ac2f-f1ff1a680374
 Screen recording:
 
 https://github.com/user-attachments/assets/a097632b-8a6c-4629-b986-999b7d296ba1
+
+
+## Challenges
+There were several challenges that we grappled with in this project. Given that our goal was to design an HCI system, we had to ensure that our system design allowed for a good user experience. This involved figuring out how to synchronize voice cues and robot movements, making decisions on movement speed, and making tradeoffs between system efficiency and usability. For example, we tried to synchronize voice cues to robot movements, but then found that discrepancies in network response times would result in voice cues being out of sync with the robot's arm movements. As a result, we realized that a better approach was to adjust the poses until we were happy with them, and then record voice-overs of every instruction in a pose while watching the robot move. Then, this audio file could be played at the beginning of each pose, and the voice cues were generally synchronized with their respective arm movements. This configuration meant that we had a less modular system (changing a pose meant re-recording the entire voiceover for that pose), but it resulted in a better user experience. Additionally, in deciding between using MoveNet's single-image and video models for this project, we made the opposite tradeoff. Using the video model would have allowed for better evaluation of the user's actions, as we could evaluate the entire pose instead of a single image. However, we were concerned about latency and making the user stay in one pose for a long time as the model evaluated their pose, so we decided to evaluate based on single images.
+
+## Future Work
+If we had more time to improve on this project, we would first add additional support for adaptive verbal feedback, building upon our implementation of the "arms too low" feedback for pose 1. Potentially, we could use a more sophisticated classification system to evaluate user poses rather than our current approach using binary classification. Furthermore, we could implement more poses, including ones with greater complexity, to accommodate users who are already tai chi masters. Finally, we could use inverse kinematics to implement a mimic function, allowing for the robot to learn additional poses from human demonstrators, thus allowing for a database of poses to be created and added to.
+
+## Takeaways
+- HCI systems require tradeoffs to ensure the best user experience possible
+- Make sure you're happy with poses before recording voice-overs
+- When trying to make a robot with one arm perform tai chi poses, pick poses that have vertical symmetry
