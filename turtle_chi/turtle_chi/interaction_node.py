@@ -1,4 +1,17 @@
 #!/usr/bin/env python3
+"""
+Turtle Chi - Three Movement Tai Chi Teaching Node
+
+This ROS2 node controls a TurtleBot4 with OpenManipulator arm to teach three different
+Tai Chi movements through demonstration, user participation, and pose evaluation using
+computer vision models.
+
+The robot:
+1. Demonstrates each movement pose sequence
+2. Guides the user through the movement
+3. Evaluates the user's final pose using ML models
+4. Provides audio feedback and celebration animations
+"""
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String, Bool, Int32, Float64
@@ -13,9 +26,28 @@ import numpy as np
 
 
 class ThreeMovementTaiChiNode(Node):
+    """
+    Main node for teaching three Tai Chi movements using robot demonstration and pose evaluation.
+    
+    This node orchestrates:
+    - Arm movement sequences for Tai Chi demonstrations
+    - Pose capture triggering for user evaluation
+    - Model selection for different movement types
+    - Audio feedback and robot animations
+    - Multi-step teaching workflow
+    """
     def __init__(self):
-        super().__init__('tai_chi_interaction')
+        """
+        Initialize the Tai Chi teaching node with publishers, subscribers, and movement definitions.
         
+        Specifically sets up:
+        - ROS2 parameters for topics and configuration
+        - Publishers for arm control, model selection, and base movement
+        - Subscriber for pose evaluation results
+        - Three different Tai Chi movement sequences using interpolated poses function
+        """
+        super().__init__('tai_chi_interaction')
+        #-----Parameter Declarations-------
         self.declare_parameter('trigger_topic', '/trigger_capture')
         self.declare_parameter('result_topic', '/pose_result')
         self.declare_parameter('model_select_topic', '/select_movement')
@@ -25,7 +57,7 @@ class ThreeMovementTaiChiNode(Node):
         self.declare_parameter('audio_dir', '/home/jarch/intro_robo_ws/src/turtle_chi/turtle_chi/')
         self.declare_parameter('use_audio', True)
         self.declare_parameter('step_duration', 1.8)
-        
+        #----Retreiving Parameter values--------
         self.trigger_topic = self.get_parameter('trigger_topic').value
         self.result_topic = self.get_parameter('result_topic').value
         self.model_select_topic = self.get_parameter('model_select_topic').value
@@ -35,35 +67,87 @@ class ThreeMovementTaiChiNode(Node):
         self.audio_dir = self.get_parameter('audio_dir').value
         self.use_audio = self.get_parameter('use_audio').value
         self.step_duration = self.get_parameter('step_duration').value
-        
+
+        # --- STarting Logging
         self.get_logger().info("="*60)
-        self.get_logger().info("Enhanced Three-Movement Tai Chi Node")
+        self.get_logger().info(" Three-Movement Tai Chi Node")
         self.get_logger().info("="*60)
         
         # Publishers
+        # Trigger pose capture and evaluation
         self.trigger_pub = self.create_publisher(Bool, self.trigger_topic, 10)
+
+        # Control the 4-DOF arm. Not using the custom message given my teaching team through omx for no particular reason
         self.arm_pub = self.create_publisher(JointTrajectory, self.arm_topic, 10)
+
+        # Select which ML model to use for pose classification
         self.model_select_pub = self.create_publisher(Int32, self.model_select_topic, 10)
+
+        # Control gripper open/close for animations
         self.gripper_pub = self.create_publisher(ArmGripperPosition, self.gripper_topic, 10)
+
+        # Control robot base rotation (for celebration spin)
         self.cmd_vel_pub = self.create_publisher(Twist, self.cmd_vel_topic, 10)
         
-        # Subscriber
+        # Subscriber : Receive pose evaluation results from computer vision node
         self.result_sub = self.create_subscription(
             String,
             self.result_topic,
             self.result_callback,
             10
         )
-        
+
+        # ----State Variables-----
         self.latest_result = None
         self.waiting_for_result = False
 
+        # --- defining key movements for each pose ---
+        MOVEMENT_KEY_POSES = {
+            1: {
+                'key_poses': [
+                    [0.0, -0.023, 0.003, 0.0],
+                    [0.0, 1.499, 0.209, 0.0],
+                    [0.0, 1.496, -0.407, 0.0],
+                    [0.0, 1.116, -0.699, 0.0],
+                    [0.0, 0.545, -1.197, 0.0],
+                    [0.0, 0.003, -1.197, 0.599],
+                    [0.0, -0.402, -1.197, 0.0],
+                    [0.0, -0.023, 0.003, 0.0],
+                ],
+                'num_steps': 2  # Number of interpolation steps between key poses
+            },
+            2: {
+                'key_poses': [
+                    [-0.008, -1.005, 0.715, 0.302],
+                    [1.571, -1.950, -2.0, 0.0],
+                    [1.571, 0.0, -2.0, 0.0],
+                    [1.571, -0.600, -1.0, -0.3],
+                    [1.571, -1.300, 1.150, -1.4],
+                ],
+                'num_steps': 2
+            },
+            3: {
+                'key_poses': [
+                    [-0.008, -1.005, 0.715, 0.302],
+                    [2.2, 2.0, -2.0, 0.0],
+                    [1.571, 0.0, -2.0, 0.0],
+                    [1.571, -1.300, 1.050, 0.0],
+                    [1.57, 1.249, -0.451, -0.499],
+                    [1.571, 0.0, -2.0, 0.0],
+                    [1.571, -1.300, 1.050, 0.0],
+                    [1.57, 1.249, -0.451, -0.499],
+                ],
+                'num_steps': 4
+            }
+        }
+
+        # Generate smooth interpolated pose sequences for each movement
         self.movement_1_poses = self._create_smooth_movement_1()
- 
         self.movement_2_poses = self._create_smooth_movement_2()
- 
         self.movement_3_poses = self._create_smooth_movement_3()
 
+        # Dictionary organizing all three movements with metadata.
+        # Was more relevant when we had multiple audio files per movement. This organization is now redundant.
         self.movements = {
             1: {
                 'name': 'Movement 1 : Flow Sequence',
@@ -79,21 +163,23 @@ class ThreeMovementTaiChiNode(Node):
             }
         }
 
-        #Pose first audio files
+        # ----- Audio Files ------
+        # Audio files for initial pose demonstrations
         self.pose_first_audio = ["Pose_1_audio.WAV", "Pose_2_audio.WAV", "Pose_3_audio.WAV"]
 
-        # Audio files
+        # Audio files for various interaction moments
         self.audio_files = {
             "welcome": "Welcome.wav",
-            "intro": "intro.wav",
             "good_job": "good job ur pose worked.wav",
             "stay_for_evaluate": "stay_for_evaluate.wav",
             "try_again": "Jacks_Mom.wav",
             "low_arms": "low_arms.wav", 
         }
 
+        # Neutral resting position for the arm [joint1, joint2, joint3, joint4]
         self.neutral_pose = [0.0, -0.023, 0.003, 0.0]
 
+        # ---- startup summary ----- 
         self.get_logger().info("="*60)
         self.get_logger().info("Ready! 3 Movements Loaded:")
         self.get_logger().info(f"  Movement 1: {len(self.movement_1_poses)} poses")
@@ -103,80 +189,47 @@ class ThreeMovementTaiChiNode(Node):
         self.get_logger().info("="*60)
     
     def _interpolate_poses(self, start_pose, end_pose, num_steps=3): 
+        """
+        Generate smooth intermediate poses between two keyframe poses using linear interpolation.
+        Reference: https://www.geeksforgeeks.org/maths/interpolation-formula/
+        
+        This creates fluid motion by adding transition poses between defined key positions,
+        preventing jerky movements.
+        
+        Args:
+            start_pose (list): Starting joint positions 
+            end_pose (list): Ending joint positions
+            num_steps (int): Number of intermediate poses to generate
+            
+        Returns:
+            list: List of interpolated poses (each pose is a list of 4 joint values)
+        """
         interpolated = []
         for i in range(1, num_steps + 1):
-            alpha = i / (num_steps + 1)
+            # Calculate interpolation factor (0 to 1)
+            alpha = i / (num_steps + 1
+
+            # Linear interpolation for each joint
             interp_pose = [
                 start_pose[j] + alpha * (end_pose[j] - start_pose[j])
                 for j in range(4)
             ]
             interpolated.append(interp_pose)
         return interpolated
+
     
-    def _create_smooth_movement_1(self): 
-        key_poses = [
-            [0.0, -0.023, 0.003, 0.0],
-            [0.0, 1.499, 0.209, 0.0],
-            [0.0, 1.496, -0.407, 0.0],
-            [0.0, 1.116, -0.699, 0.0],
-            [0.0, 0.545, -1.197, 0.0],
-            [0.0, 0.003, -1.197, 0.599],
-            [0.0, -0.402, -1.197, 0.0],
-            [0.0, -0.023, 0.003, 0.0],
-        ]
-    
+    def _create_smooth_movement(self, key_poses, num_steps=2):
         smooth_poses = []
         for i in range(len(key_poses)):
             smooth_poses.append(key_poses[i])
             if i < len(key_poses) - 1:
-                # Add 2 interpolation poses between each key pose
-                interpolated = self._interpolate_poses(key_poses[i], key_poses[i+1], num_steps=2)
+                interpolated = self._interpolate_poses(key_poses[i], key_poses[i+1], num_steps=num_steps)
                 smooth_poses.extend(interpolated)
-        
         return smooth_poses
-    
-    def _create_smooth_movement_2(self): 
-        key_poses = [
-            [-0.008, -1.005, 0.715, 0.302],   # Start
-            [1.571, -1.950, -2.0, 0.0],        # Large rotation
-            [1.571, 0.0, -2.0, 0.0],           # Arms extended
-            [1.571, -0.600, -1.0, -0.3],
-            [1.571, -1.300, 1.150, -1.4],      # Complex position
-        ]
         
-        smooth_poses = []
-        for i in range(len(key_poses)):
-            smooth_poses.append(key_poses[i])
-            if i < len(key_poses) - 1:
-                # Add 2 interpolation poses between each key pose
-                interpolated = self._interpolate_poses(key_poses[i], key_poses[i+1], num_steps=2)
-                smooth_poses.extend(interpolated)
-        
-        return smooth_poses
-    
-    def _create_smooth_movement_3(self): 
-        key_poses = [
-            [-0.008, -1.005, 0.715, 0.302],    # Start
-            [2.2, 2.0, -2.0, 0.0],          # Opposite rotation
-            [1.571, 0.0, -2.0, 0.0],            # Extended
-            [1.571, -1.300, 1.050, 0.0],        # Transition
-            [1.57, 1.249, -0.451, -0.499],      # Complex pose
-            [1.571, 0.0, -2.0, 0.0],            # Extended again
-            [1.571, -1.300, 1.050, 0.0],        # Repeat transition
-            [1.57, 1.249, -0.451, -0.499],    # End
-        ]
-        
-        smooth_poses = []
-        for i in range(len(key_poses)):
-            smooth_poses.append(key_poses[i])
-            if i < len(key_poses) - 1:
-                # Add 1 interpolation pose between each ? maybe 2? 
-                interpolated = self._interpolate_poses(key_poses[i], key_poses[i+1], num_steps=4)
-                smooth_poses.extend(interpolated)
-        
-        return smooth_poses
-    
     def play_audio(self, filename, blocking=True):
+        """
+        """
         if not self.use_audio:
             self.get_logger().info(f"[Audio: {filename}]")
             return None
