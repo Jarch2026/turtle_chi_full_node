@@ -1,6 +1,33 @@
 # Turtle Chi: Robot-Mediated Tai Chi Instruction System
 ## Jack Archer, Jiwon Moon, Pooja Vegesna
 ## Final Project Report Sections
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Motivation](#motivation)
+3. [Prior Research & Identified Gaps](#prior-research--identified-gaps)
+4. [System Architecture](#system-architecture)
+   - [Movement Control & Orchestration Node](#1-movement-control--orchestration-node-interaction_nodepy)
+   - [Pose Estimation & Classification Node](#2-pose-estimation--classification-node-pose_nodepy)
+   - [Training & Validation Pipeline](#3-training--validation-pipeline-train_mlp_classifierpy-test_mlp_classifierpy)
+   - [Integration & Information Flow](#integration--information-flow)
+5. [Data Collection and Model Training](#data-collection-and-model-training)
+   - [Camera Capture](#collecting-training-images-from-turtlebot-camera)
+   - [Training Pipeline](#training-pipeline-overview)
+6. [ROS Node Diagram](#ros-node-diagram)
+7. [Installation & Usage](#how-to-run)
+   - [Prerequisites](#prerequisites)
+   - [Setup](#setup)
+   - [Running the System](#running-the-system)
+   - [Adjusting Parameters](#adjusting-parameters)
+   - [Testing Individual Components](#testing-individual-components)
+   - [Expected Session Flow](#expected-session-flow)
+   - [Safety Notes](#safety-notes)
+8. [System Flow](#system-flow)
+9. [Demo Videos](#demo-videos)
+10. [References](#references)
 
 ---
 
@@ -470,3 +497,19 @@ https://github.com/user-attachments/assets/eed521ba-ac1b-45b0-ac2f-f1ff1a680374
 Screen recording:
 
 https://github.com/user-attachments/assets/a097632b-8a6c-4629-b986-999b7d296ba1
+
+
+# References
+[1] Granados, D. F. P., Yamamoto, B. A., Kamide, H., Kinugawa, J., & Kosuge, K. (2017). Dance
+teaching by a robot: Combining cognitive and physical human–robot interaction for supporting the skill
+learning process. IEEE Robotics and Automation Letters, 2(3), 1452-1459.
+[2] Han, M., & Yu, Q. (2025, June). Construction of evaluation system of 24-style Tai Chi classic
+technique movements based on computer vision. In Proceedings of the 2025 5th International Conference
+on Automation Control, Algorithm and Intelligent Bionics (pp. 90-95).
+[3] Olikkal, P., Pei, D., Karri, B. K., Satyanarayana, A., Kakoty, N. M., & Vinjamuri, R. (2024).
+Biomimetic learning of hand gestures in a humanoid robot. Frontiers in Human Neuroscience, 18,
+1391531.
+[4] Zheng, Z., Oh, H., Mim, M., Choi, W., & Lee, Y . (2023). An Exploration of Robot-Mediated Tai Chi
+Exercise for Older Adults. Applied Sciences, 13(9), 5306.
+[5] Zhao, X. (2025). AI-Driven Tai Chi mastery using deep learning framework for movement assessment
+and personalized training. Scientific Reports, 15(1), 31700.
