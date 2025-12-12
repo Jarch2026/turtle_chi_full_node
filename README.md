@@ -390,5 +390,25 @@ Here's a flowchart of our teaching flow :)
 
 
 ### Demo videos:
-All movements (1-3) without incorrect:
+#### All movements (1-3) without incorrect (sped up videos to meet Github file upload requirement):
+Full view:
+
 https://github.com/user-attachments/assets/9d527b3e-9a96-40fe-8249-c65f44ad5fb3
+
+Robot:
+
+https://github.com/user-attachments/assets/454fed5b-7a6c-478b-9128-43c4e2b782b1
+
+Screen recording:
+
+https://github.com/user-attachments/assets/4dc7e0ae-bd80-4ef6-b99d-d423b4d21f85
+
+
+
+#### Movement 1 wrong (too low):
+
+https://github.com/user-attachments/assets/eed521ba-ac1b-45b0-ac2f-f1ff1a680374
+
+Screen recording:
+
+https://github.com/user-attachments/assets/a097632b-8a6c-4629-b986-999b7d296ba1
