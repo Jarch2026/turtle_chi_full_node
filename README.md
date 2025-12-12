@@ -508,19 +508,3 @@ https://github.com/user-attachments/assets/eed521ba-ac1b-45b0-ac2f-f1ff1a680374
 Screen recording:
 
 https://github.com/user-attachments/assets/a097632b-8a6c-4629-b986-999b7d296ba1
-
-
-# References
-[1] Granados, D. F. P., Yamamoto, B. A., Kamide, H., Kinugawa, J., & Kosuge, K. (2017). Dance
-teaching by a robot: Combining cognitive and physical human–robot interaction for supporting the skill
-learning process. IEEE Robotics and Automation Letters, 2(3), 1452-1459.
-[2] Han, M., & Yu, Q. (2025, June). Construction of evaluation system of 24-style Tai Chi classic
-technique movements based on computer vision. In Proceedings of the 2025 5th International Conference
-on Automation Control, Algorithm and Intelligent Bionics (pp. 90-95).
-[3] Olikkal, P., Pei, D., Karri, B. K., Satyanarayana, A., Kakoty, N. M., & Vinjamuri, R. (2024).
-Biomimetic learning of hand gestures in a humanoid robot. Frontiers in Human Neuroscience, 18,
-1391531.
-[4] Zheng, Z., Oh, H., Mim, M., Choi, W., & Lee, Y . (2023). An Exploration of Robot-Mediated Tai Chi
-Exercise for Older Adults. Applied Sciences, 13(9), 5306.
-[5] Zhao, X. (2025). AI-Driven Tai Chi mastery using deep learning framework for movement assessment
-and personalized training. Scientific Reports, 15(1), 31700.
