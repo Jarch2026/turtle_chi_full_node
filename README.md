@@ -128,6 +128,64 @@ The complete system operates through publish-subscribe coordination:
 
 This architecture enables real-time interaction (<2s evaluation latency) while maintaining modularity—each node can be developed, tested, and debugged independently.
 
+## Data Collection and Model Training
+
+### Collecting Training Images from TurtleBot Camera
+
+To train the pose classification models, we first need to collect images of people performing each Tai Chi movement in both correct and incorrect forms.
+
+#### Camera Capture Script
+
+Use the `camera_capture.py` script to automatically capture images from the TurtleBot's OAK-D camera:
+```python
+# Location: turtle_chi/camera_capture.py
+# This script subscribes to the TurtleBot camera and saves 20 images
+```
+
+**The script:**
+- Automatically detects TurtleBot ID from `ROS_DOMAIN_ID` environment variable
+- Captures 20 images with 2-second intervals
+- Saves images as JPEG to specified directory
+- Displays live camera feed during capture
+
+**Usage:**
+
+1. **Position the TurtleBot** to face the area where poses will be demonstrated
+
+2. **Run the capture script:**
+```bash
+   ros2 run turtle_chi camera_capture
+```
+
+3. **Perform the poses** in front of the camera. The script will:
+   - Capture one image every 2 seconds
+   - Save to: `/home/<username>/intro_robo_ws/src/turtle_chi/turtle_chi/images/`
+   - Stop after 20 images
+
+4. **Organize images** by movement and quality:
+```
+   images/
+   ├── movement_1/
+   │   ├── correct/
+   │   └── incorrect/
+   ├── movement_2/
+   │   ├── correct/
+   │   └── incorrect/
+   └── movement_3/
+       ├── correct/
+       └── incorrect/
+```
+
+### Training Pipeline Overview
+
+1. **Collect images** using `camera_capture.py`
+2. **Label images** as correct/incorrect for each movement
+3. **Run MoveNet** on images to extract keypoints
+4. **Extract features** (43-dimensional vectors) from keypoints
+5. **Train MLP classifiers** (one per movement) using scikit-learn
+6. **Save models** as `.npz` files in `models/ver3/` directory
+7. **Deploy models** on robot for real-time evaluation
+
 ---
 
 ## ROS Node Diagram
