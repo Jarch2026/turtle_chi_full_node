@@ -242,7 +242,7 @@ Ensure the following are installed on your TurtleBot4:
    # ├── turtle_chi/
    # │   ├── interaction_node.py
    # │   ├── pose_node.py
-   # │   ├── *.WAV (audio files)
+   # │   ├── audios/*.WAV
    # |   ├──- models/
    # │      └── ver3/
    # │       ├── movement_1_mlp_scratch_ver3.npz
