@@ -51,6 +51,13 @@ imitation studies, but only focused on upper-limb gestures and did not address f
 Overall, to our knowledge, no existing system integrates real-time full-body pose evaluation, physical robotic demonstration, and adaptive verbal feedback in a physical movement (especially Tai Chi) 
 teaching context. This project aims to address this gap to explore how robots can provide engaging learning experiences.
 
+### References
+[1] Granados, D. F. P., Yamamoto, B. A., Kamide, H., Kinugawa, J., & Kosuge, K. (2017). Dance teaching by a robot: Combining cognitive and physical human–robot interaction for supporting the skill learning process. IEEE Robotics and Automation Letters, 2(3), 1452-1459.
+[2] Han, M., & Yu, Q. (2025, June). Construction of evaluation system of 24-style Tai Chi classic technique movements based on computer vision. In Proceedings of the 2025 5th International Conference on Automation Control, Algorithm and Intelligent Bionics (pp. 90-95).
+[3] Olikkal, P., Pei, D., Karri, B. K., Satyanarayana, A., Kakoty, N. M., & Vinjamuri, R. (2024). Biomimetic learning of hand gestures in a humanoid robot. Frontiers in Human Neuroscience, 18, 1391531.
+[4] Zheng, Z., Oh, H., Mim, M., Choi, W., & Lee, Y. (2023). An Exploration of Robot-Mediated Tai Chi Exercise for Older Adults. Applied Sciences, 13(9), 5306.
+[5] Zhao, X. (2025). AI-Driven Tai Chi mastery using deep learning framework for movement assessment and personalized training. Scientific Reports, 15(1), 31700.
+
 ---
 
 ## System Architecture
@@ -139,7 +146,7 @@ The `MLPBinaryClassifier` class implements a fully-connected neural network enti
 4. Trains for 600 epochs with learning rate 5e-3
 5. Saves model weights (W₁, b₁, W₂, b₂, W₃, b₃) to `.npz` file
 
-The training script reports loss and accuracy every 100 epochs. The models are stored in `models/ver3/`. The accuracy for each model is as follows: (1) movement_1: 100% (2) movement_2: 97.8% (3) 97.8%.
+The training script reports loss and accuracy every 100 epochs. The models are stored in `models/ver3/`. The accuracy for each model is as follows: (1) movement_1: 100% (2) movement_2: 97.8% (3) movement_4: 97.8% (4) movement_1_low: 91.7% (5) movement_2_low: 98.6%.
 
 ### Integration & Information Flow
 
