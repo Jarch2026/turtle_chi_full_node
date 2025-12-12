@@ -364,3 +364,8 @@ When running successfully, you should observe:
 
 Here's a flowchart of our teaching flow :) 
 <img width="1178" height="2111" alt="flow" src="https://github.com/user-attachments/assets/8655df16-530d-43d4-940a-ae21fcae9189" />
+
+
+### Demo videos:
+All movements (1-3) without incorrect:
+https://github.com/user-attachments/assets/9d527b3e-9a96-40fe-8249-c65f44ad5fb3
