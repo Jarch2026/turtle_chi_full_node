@@ -259,9 +259,33 @@ Ensure the following are installed on your TurtleBot4:
    source install/setup.bash
    ```
 
+3. **Set Up openManipulator Arm Connection**
+Terminal 1:
+  ```bash
+  ssh ubuntu@$ROBOT_IP
+  bringup_arm port_name:=/dev/ttyUSB[ARM PORT NUMBER]
+  ```
+
+Terminal 2:
+  ```bash
+  ssh ubuntu@$ROBOT_IP
+  start_moveit
+  ```
+Terminal 3:
+  ```bash
+  ros2 run omx_cpp_interface arm_cmd
+  ```
+   
 ### Running the System
+Terminal 4:
+  ```bash
+  ros2 run turtle_chi pose-node
+  ```
 
-
+Terminal 5:
+  ```bash
+  ros2 run turtle_chi interaction-node
+  ```
 The robot will immediately begin the teaching session.
 
 ### Adjusting Parameters
