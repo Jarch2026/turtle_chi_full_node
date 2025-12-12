@@ -305,7 +305,6 @@ ros2 run turtle_chi pose_node \
 node.teach_movement(1)  # Test Movement 1 only
 # node.teach_movement(2)  # Test Movement 2 only
 # node.teach_movement(3)  # Test Movement 3 only
-# node.celebration_spin()  # Test celebration only
 ```
 
 **Test Pose Estimation Only**:
