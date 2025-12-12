@@ -9,9 +9,9 @@
 2. [Prior Research & Identified Gaps](#prior-research--identified-gaps)
 3. [References](#references)
 4. [System Architecture](#system-architecture)
-   - [Movement Control & Orchestration Node](#1-movement-control--orchestration-node-interaction_nodepy)
-   - [Pose Estimation & Classification Node](#2-pose-estimation--classification-node-pose_nodepy)
-   - [Training & Validation Pipeline](#3-training--validation-pipeline-train_mlp_classifierpy-test_mlp_classifierpy)
+   - [Movement Control & Orchestration Node](#1-movement-control--orchestration-node-interaction_nodepy-code) 
+   - [Pose Estimation & Classification Node](#2-pose-estimation--classification-node-pose_nodepy-code)
+   - [Training & Validation Pipeline](#3-training--validation-pipeline-train_mlp_classifierpy-test_mlp_classifierpy-test-code--train-code)
    - [Integration & Information Flow](#integration--information-flow)
 5. [Data Collection and Model Training](#data-collection-and-model-training)
    - [Camera Capture](#collecting-training-images-from-turtlebot-camera)
@@ -304,11 +304,11 @@ The system consists of two primary ROS nodes with the following communication st
               │ /pose_result            │ std_msgs/String  │ Pose          │ Orchestration   │
               │ /arm_controller/        │ trajectory_msgs/ │ Orchestration │ Arm Controller  │
               │   joint_trajectory      │   JointTrajectory│               │                 │
-              │ /tb11/target_gripper_   │ omx_cpp_interface│ Orchestration │ Gripper Driver  │
+              │ /tbXX/target_gripper_   │ omx_cpp_interface│ Orchestration │ Gripper Driver  │
               │   position              │   /ArmGripper... │               │                 │
-              │ /tb11/cmd_vel           │ geometry_msgs/   │ Orchestration │ Base Controller │
+              │ /tbXX/cmd_vel           │ geometry_msgs/   │ Orchestration │ Base Controller │
               │                         │   Twist          │               │                 │
-              │ /tb11/oakd/rgb/preview/ │ sensor_msgs/     │ Camera Driver │ Pose            │
+              │ /tbXX/oakd/rgb/preview/ │ sensor_msgs/     │ Camera Driver │ Pose            │
               │   image_raw             │   Image          │               │                 │
               └─────────────────────────┴──────────────────┴───────────────┴─────────────────┘
 ```
